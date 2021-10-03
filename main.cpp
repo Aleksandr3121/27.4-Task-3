@@ -11,39 +11,34 @@ enum TypeTask {
     C
 };
 
-class Manager {
+class Employee {
 public:
-    Manager(size_t sizeNode) : node(list<Manager*>(sizeNode)) {}
+    Employee(size_t sizeNode) : node(list<Employee*>(sizeNode)) {}
 
     virtual int Task(int intSpecifier = 0) = 0;
 
-    virtual TypeTask GetTypeTask() const = 0;
-
 protected:
-    list<Manager*> node;
+    list<Employee*> node;
 };
 
-class Worker : public Manager {
+class Worker : public Employee {
 public:
-    Worker() : Manager(0), typeTask(TypeTask::NONE) {}
+    Worker() : Employee(0), typeTask(TypeTask::NONE) {}
 
     int Task(int inSpecifier = 0) override {
+        if (typeTask != TypeTask::NONE)return 0;
         typeTask = static_cast<TypeTask>(inSpecifier);
-        return 0;
-    }
-
-    TypeTask GetTypeTask() const {
-        return typeTask;
+        return 1;
     }
 
 private:
     TypeTask typeTask;
 };
 
-class MiddleManager : public Manager {
+class MiddleManager : public Employee {
 public:
     explicit MiddleManager(size_t sizeTeam, size_t index) :
-            Manager(sizeTeam),
+            Employee(sizeTeam),
             num(index),
             quantityTasks(0),
             quantityFreeWorkers(sizeTeam) {
@@ -65,8 +60,7 @@ public:
 
         auto it = node.begin();
         while (it != node.end() && quantityTasks > 0) {
-            if ((*it)->GetTypeTask() == TypeTask::NONE) {
-                (*it)->Task((1 + rand() % 3));
+            if ((*it)->Task((1 + rand() % 3))) {
                 quantityTasks--;
                 quantityFreeWorkers--;
             }
@@ -84,21 +78,14 @@ public:
     }
 
 private:
-    //переопределил виртуальный метод и записал в private,
-    //чтобы к нему нельзя было обратиться - он не нужен в этом наследнике.
-    //Так вообще делают в рабочих проектах?
-    TypeTask GetTypeTask() const override {
-        return TypeTask::NONE;
-    }
-
     size_t num;
     int quantityTasks;
     int quantityFreeWorkers;
 };
 
-class TopManager : public Manager {
+class TopManager : public Employee {
 public:
-    explicit TopManager(const vector<size_t>& teams) : Manager(teams.size()) {
+    explicit TopManager(const vector<size_t>& teams) : Employee(teams.size()) {
         auto it = node.begin();
         for (int i = 0; i < teams.size(); ++i) {
             (*it) = new MiddleManager(teams[i], i);
@@ -123,11 +110,6 @@ public:
             ++it;
         }
     }
-
-private:
-    TypeTask GetTypeTask() const override {
-        return TypeTask::NONE;
-    }
 };
 
 class Company {
@@ -145,7 +127,7 @@ public:
     }
 
 private:
-    TopManager*head;
+    TopManager* head;
 };
 
 int main() {
